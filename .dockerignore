@@ -1,0 +1,9 @@
+node_modules
+.git
+playwright-report
+test-results
+tests
+docs
+kubernetes
+kyverno
+*.log
