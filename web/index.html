@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+  <title>Workforce Security Portal</title>
+  <link rel="stylesheet" href="/styles.css">
+</head>
+
+<body>
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-icon">A</div>
+
+      <div>
+        <strong>Acme Workforce</strong>
+        <span>Security Lab</span>
+      </div>
+    </div>
+
+    <nav>
+      <button class="nav-item active" data-section="apps">
+        Apps
+      </button>
+
+      <button class="nav-item" data-section="events">
+        Security Events
+      </button>
+
+      <button class="nav-item" data-section="audit">
+        Audit Trail
+      </button>
+    </nav>
+  </aside>
+
+  <main>
+    <header class="topbar">
+      <div>
+        <h1 id="page-title">Apps</h1>
+        <p>
+          Manage workforce integrations and investigate
+          suspicious API activity.
+        </p>
+      </div>
+
+      <div class="status-badge">
+        Demo Environment
+      </div>
+    </header>
+
+    <section id="apps-section" class="page-section">
+      <div class="section-heading">
+        <div>
+          <h2>Connected Apps</h2>
+          <p>
+            Applications connected to Acme Financial's
+            workforce environment.
+          </p>
+        </div>
+
+        <button class="primary-button" disabled>
+          + Create App
+        </button>
+      </div>
+
+      <div class="card">
+        <table>
+          <thead>
+            <tr>
+              <th>App Name</th>
+              <th>Description</th>
+              <th>App ID</th>
+              <th>Status</th>
+              <th>Last Used</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            <tr>
+              <td>
+                <button
+                  class="table-link"
+                  id="open-reporting-app"
+                >
+                  Fraud Operations Reporting
+                </button>
+              </td>
+
+              <td>
+                Retrieves intraday workforce data for the
+                fraud contact center.
+              </td>
+
+              <td>
+                integration-reporting-prod
+              </td>
+
+              <td>
+                <span
+                  class="status-pill active-status"
+                  id="integration-status"
+                >
+                  Active
+                </span>
+              </td>
+
+              <td>Recently</td>
+            </tr>
+
+            <tr>
+              <td>Workday Employee Sync</td>
+
+              <td>
+                Synchronizes active employees every eight
+                hours.
+              </td>
+
+              <td>integration-workday-sync</td>
+
+              <td>
+                <span class="status-pill active-status">
+                  Active
+                </span>
+              </td>
+
+              <td>2 hours ago</td>
+            </tr>
+
+            <tr>
+              <td>Payroll Export</td>
+
+              <td>
+                Exports approved worked hours to payroll.
+              </td>
+
+              <td>integration-payroll-export</td>
+
+              <td>
+                <span class="status-pill active-status">
+                  Active
+                </span>
+              </td>
+
+              <td>Yesterday</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="scenario-grid">
+        <div class="card scenario-card">
+          <h3>Normal API Activity</h3>
+
+          <p>
+            Send an authorized request from Acme Financial
+            to its own workforce environment.
+          </p>
+
+          <button
+            class="secondary-button"
+            id="run-normal-request"
+          >
+            Run Normal Request
+          </button>
+        </div>
+
+        <div class="card scenario-card danger-card">
+          <h3>Cross-Tenant Attempt</h3>
+
+          <p>
+            Use the Acme integration to request Northstar
+            Health workforce data.
+          </p>
+
+          <button
+            class="danger-button"
+            id="run-suspicious-request"
+          >
+            Generate Suspicious Activity
+          </button>
+        </div>
+      </div>
+
+      <div class="card result-card">
+        <h3>Scenario Result</h3>
+
+        <pre id="scenario-result">No scenario has been run.</pre>
+      </div>
+    </section>
+
+    <section
+      id="events-section"
+      class="page-section hidden"
+    >
+      <div class="section-heading">
+        <div>
+          <h2>Security Events</h2>
+
+          <p>
+            Review correlated API and integration security
+            signals.
+          </p>
+        </div>
+
+        <button
+          class="secondary-button"
+          id="refresh-events"
+        >
+          Refresh
+        </button>
+      </div>
+
+      <div id="events-container"></div>
+    </section>
+
+    <section
+      id="audit-section"
+      class="page-section hidden"
+    >
+      <div class="section-heading">
+        <div>
+          <h2>Audit Trail</h2>
+
+          <p>
+            Analyst actions recorded during the incident.
+          </p>
+        </div>
+
+        <button
+          class="secondary-button"
+          id="refresh-audit"
+        >
+          Refresh
+        </button>
+      </div>
+
+      <div class="card">
+        <pre id="audit-output">No audit entries loaded.</pre>
+      </div>
+    </section>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>
