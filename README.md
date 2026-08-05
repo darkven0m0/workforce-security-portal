@@ -54,6 +54,9 @@ The project demonstrates the following end-to-end workflow:
 
 ## Architecture
 
+![Workforce Security Portal architecture](docs/architecture/workforce-security-architecture.png)
+
+
 The architecture follows a prevention, detection, and response model.
 
 ### Identity and access
