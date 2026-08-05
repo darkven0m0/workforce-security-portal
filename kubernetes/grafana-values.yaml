@@ -1,0 +1,50 @@
+adminUser: admin
+adminPassword: REPLACE_ME
+
+persistence:
+  enabled: true
+  size: 2Gi
+  storageClassName: microk8s-hostpath
+
+service:
+  type: ClusterIP
+
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+      - name: Loki
+        uid: loki
+        type: loki
+        access: proxy
+        url: http://loki-gateway.observability.svc.cluster.local
+        isDefault: true
+        editable: true
+
+readinessProbe:
+  httpGet:
+    path: /api/health
+    port: grafana
+  initialDelaySeconds: 10
+  timeoutSeconds: 5
+  periodSeconds: 10
+  successThreshold: 1
+  failureThreshold: 6
+
+livenessProbe:
+  httpGet:
+    path: /api/health
+    port: grafana
+  initialDelaySeconds: 60
+  timeoutSeconds: 10
+  periodSeconds: 15
+  successThreshold: 1
+  failureThreshold: 10
+
+resources:
+  requests:
+    cpu: 100m
+    memory: 256Mi
+  limits:
+    cpu: 500m
+    memory: 768Mi

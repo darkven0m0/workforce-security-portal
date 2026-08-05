@@ -7,9 +7,10 @@ RUN npm ci
 
 COPY tsconfig.json ./
 COPY api ./api
+COPY web ./web
+COPY scripts ./scripts
 
-RUN npm run typecheck
-RUN ./node_modules/.bin/tsc
+RUN npm run build
 
 FROM node:24-alpine AS runtime
 
@@ -21,7 +22,7 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev && npm cache clean --force
 
 COPY --from=build /app/dist ./dist
-COPY web ./web
+COPY --from=build /app/web ./web
 
 RUN addgroup -S appgroup && \
     adduser -S appuser -G appgroup && \

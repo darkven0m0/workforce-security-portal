@@ -15,6 +15,12 @@ const analystHeaders = {
   "Content-Type": "application/json"
 };
 
+const adminHeaders = {
+  Authorization: "Bearer security-admin-token",
+  "x-api-key": "admin-demo-api-key",
+  "Content-Type": "application/json"
+};
+
 test.beforeEach(async ({ request }) => {
   const resetResponse = await request.post(
     "/test/reset"
@@ -66,7 +72,7 @@ test(
 );
 
 test(
-  "Acme cannot access Northstar employees",
+  "Acme cross-org access is denied and audited",
   async ({ request }) => {
     const response = await request.post(
       "/via/v2/organizations/northstar-health/workforce/search/employees",
@@ -86,6 +92,38 @@ test(
       kind: "ErrorResponse",
       errorCode: "ORGANIZATION_ACCESS_DENIED"
     });
+
+    const auditResponse = await request.get(
+      "/security/v1/audit",
+      {
+        headers: analystHeaders
+      }
+    );
+
+    expect(auditResponse.status()).toBe(200);
+
+    const auditBody =
+      await auditResponse.json();
+
+    expect(auditBody).toMatchObject({
+      kind: "AuditEntryCollection",
+      totalItems: 1
+    });
+
+    expect(
+      auditBody.auditEntries
+    ).toEqual([
+      expect.objectContaining({
+        organizationId:
+          "northstar-health",
+        actor:
+          "acme-user-001",
+        action:
+          "ORGANIZATION_ACCESS_DENIED",
+        target:
+          "northstar-health"
+      })
+    ]);
   }
 );
 
@@ -237,7 +275,7 @@ test(
       await request.patch(
         "/security/v1/events/event-1001/revoke-api-key",
         {
-          headers: analystHeaders
+          headers: adminHeaders
         }
       );
 
@@ -306,5 +344,83 @@ test(
       "SECURITY_EVENT_INVESTIGATION_STARTED",
       "API_KEY_REVOKED"
     ]);
+  }
+);
+
+test(
+  "high API request volume creates a security event",
+  async ({ request }) => {
+    const requestCount = 25;
+
+    const responses =
+      await Promise.all(
+        Array.from(
+          {
+            length: requestCount
+          },
+          () =>
+            request.post(
+              "/via/v2/organizations/acme-financial/workforce/search/employees",
+              {
+                headers:
+                  acmeHeaders,
+                data: {
+                  pageSize: 25
+                }
+              }
+            )
+        )
+      );
+
+    for (
+      const response of responses
+    ) {
+      expect(
+        response.status()
+      ).toBe(200);
+    }
+
+    const eventsResponse =
+      await request.get(
+        "/security/v1/events",
+        {
+          headers:
+            analystHeaders
+        }
+      );
+
+    expect(
+      eventsResponse.status()
+    ).toBe(200);
+
+    const eventsBody =
+      await eventsResponse.json();
+
+    const volumeEvent =
+      eventsBody.securityEvents.find(
+        (event: {
+          id: string;
+        }) =>
+          event.id ===
+          "event-volume-integration-reporting-prod"
+      );
+
+    expect(volumeEvent).toBeDefined();
+
+    expect(volumeEvent).toMatchObject({
+      organizationId:
+        "acme-financial",
+      integrationId:
+        "integration-reporting-prod",
+      title:
+        "Automated test detected unusual API request volume",
+      severity: "High",
+      normalRequestCount: 5,
+      status: "Open"
+    });
+
+    expect(
+      volumeEvent.requestCount
+    ).toBeGreaterThanOrEqual(10);
   }
 );

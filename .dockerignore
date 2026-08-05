@@ -1,9 +1,11 @@
 node_modules
+dist
 .git
+.env
+.env.*
 playwright-report
 test-results
-tests
-docs
-kubernetes
-kyverno
+screenshots
 *.log
+*.tar
+*.tar.gz

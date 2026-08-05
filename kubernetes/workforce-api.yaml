@@ -1,0 +1,147 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: workforce-security-api
+  namespace: dev
+  labels:
+    app: workforce-security-api
+    app.kubernetes.io/name: workforce-security-api
+    app.kubernetes.io/version: "1.6.0"
+spec:
+  replicas: 1
+
+  selector:
+    matchLabels:
+      app: workforce-security-api
+
+  template:
+    metadata:
+      labels:
+        app: workforce-security-api
+        app.kubernetes.io/name: workforce-security-api
+        app.kubernetes.io/version: "1.6.0"
+
+    spec:
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 100
+        runAsGroup: 101
+        fsGroup: 101
+
+        seccompProfile:
+          type: RuntimeDefault
+
+      containers:
+        - name: workforce-security-api
+          image: workforce-security-api:1.6.0
+          imagePullPolicy: Never
+
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+
+          env:
+            - name: NODE_ENV
+              value: production
+
+            - name: PORT
+              value: "3000"
+
+            # Microsoft Entra configuration.
+            # Values are stored in an untracked local .env file and
+            # loaded into the Kubernetes Secret during deployment.
+
+            - name: ENTRA_TENANT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: workforce-entra-credentials
+                  key: ENTRA_TENANT_ID
+
+            - name: ENTRA_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: workforce-entra-credentials
+                  key: ENTRA_CLIENT_ID
+
+            - name: ENTRA_CLIENT_SECRET
+              valueFrom:
+                secretKeyRef:
+                  name: workforce-entra-credentials
+                  key: ENTRA_CLIENT_SECRET
+
+            - name: ENTRA_SPA_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: workforce-entra-credentials
+                  key: ENTRA_SPA_CLIENT_ID
+
+            - name: ENTRA_API_CLIENT_ID
+              valueFrom:
+                secretKeyRef:
+                  name: workforce-entra-credentials
+                  key: ENTRA_API_CLIENT_ID
+
+            - name: ENTRA_API_SCOPE
+              valueFrom:
+                secretKeyRef:
+                  name: workforce-entra-credentials
+                  key: ENTRA_API_SCOPE
+
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+
+            initialDelaySeconds: 3
+            periodSeconds: 5
+            timeoutSeconds: 2
+            failureThreshold: 3
+
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+
+            initialDelaySeconds: 10
+            periodSeconds: 10
+            timeoutSeconds: 2
+            failureThreshold: 3
+
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+
+            limits:
+              cpu: 250m
+              memory: 256Mi
+
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+
+            capabilities:
+              drop:
+                - ALL
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: workforce-security-api
+  namespace: dev
+  labels:
+    app: workforce-security-api
+    app.kubernetes.io/name: workforce-security-api
+spec:
+  type: ClusterIP
+
+  selector:
+    app: workforce-security-api
+
+  ports:
+    - name: http
+      port: 3000
+      targetPort: http
+      protocol: TCP

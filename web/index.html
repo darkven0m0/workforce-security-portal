@@ -2,12 +2,18 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
+
   <meta
     name="viewport"
     content="width=device-width, initial-scale=1.0"
   >
+
   <title>Workforce Security Portal</title>
-  <link rel="stylesheet" href="/styles.css">
+
+  <link
+    rel="stylesheet"
+    href="/styles.css"
+  >
 </head>
 
 <body>
@@ -22,15 +28,31 @@
     </div>
 
     <nav>
-      <button class="nav-item active" data-section="apps">
+      <button
+        class="nav-item active"
+        data-section="apps"
+      >
         Apps
       </button>
 
-      <button class="nav-item" data-section="events">
+      <button
+        class="nav-item"
+        data-section="events"
+      >
         Security Events
       </button>
 
-      <button class="nav-item" data-section="audit">
+      <button
+        class="nav-item"
+        data-section="identity"
+      >
+        Identity Activity
+      </button>
+
+      <button
+        class="nav-item"
+        data-section="audit"
+      >
         Audit Trail
       </button>
     </nav>
@@ -40,30 +62,124 @@
     <header class="topbar">
       <div>
         <h1 id="page-title">Apps</h1>
+
         <p>
           Manage workforce integrations and investigate
           suspicious API activity.
         </p>
       </div>
 
-      <div class="status-badge">
-        Demo Environment
+      <div class="topbar-actions">
+        <label class="identity-selector">
+          <span>Demo Identity</span>
+
+          <select id="identity-select">
+            <option value="acme">
+              Acme Financial
+            </option>
+
+            <option value="northstar">
+              Northstar Health
+            </option>
+
+            <option value="analyst">
+              Security Analyst
+            </option>
+          </select>
+        </label>
+
+        <div class="status-badge">
+          Demo Environment
+        </div>
       </div>
     </header>
 
-    <section id="apps-section" class="page-section">
+    <section
+      id="apps-section"
+      class="page-section"
+    >
       <div class="section-heading">
         <div>
           <h2>Connected Apps</h2>
-          <p>
+
+          <p id="apps-description">
             Applications connected to Acme Financial's
             workforce environment.
           </p>
         </div>
 
-        <button class="primary-button" disabled>
+        <button
+          class="primary-button"
+          disabled
+        >
           + Create App
         </button>
+      </div>
+
+      <div class="identity-context-card">
+        <span>Currently acting as</span>
+
+        <strong id="current-identity-label">
+          Acme Financial
+        </strong>
+
+        <span id="current-identity-details">
+          Customer · acme-financial
+        </span>
+      </div>
+
+      <div
+        class="card"
+        id="entra-auth-card"
+        style="margin-bottom: 18px;"
+      >
+        <div class="section-heading">
+          <div>
+            <h3>Microsoft Entra Authentication</h3>
+
+            <p>
+              Sign in using a real Entra test account and
+              request an access token for the Workforce
+              Security API.
+            </p>
+          </div>
+
+          <span
+            class="status-pill revoked-status"
+            id="entra-auth-status"
+          >
+            Signed out
+          </span>
+        </div>
+
+        <div class="event-actions">
+          <button
+            class="primary-button"
+            id="entra-sign-in"
+          >
+            Sign in with Microsoft
+          </button>
+
+          <button
+            class="secondary-button"
+            id="entra-acquire-token"
+            disabled
+          >
+            Acquire API Token
+          </button>
+
+          <button
+            class="secondary-button"
+            id="entra-sign-out"
+            disabled
+          >
+            Sign out
+          </button>
+        </div>
+
+        <div style="margin-top: 18px;">
+          <pre id="entra-auth-output">Microsoft Entra authentication has not been initialized.</pre>
+        </div>
       </div>
 
       <div class="card">
@@ -152,18 +268,50 @@
 
       <div class="scenario-grid">
         <div class="card scenario-card">
-          <h3>Normal API Activity</h3>
+          <h3>Authorized Tenant Request</h3>
 
           <p>
-            Send an authorized request from Acme Financial
-            to its own workforce environment.
+            Use the selected identity to request workforce
+            data from its own organization.
           </p>
 
           <button
             class="secondary-button"
-            id="run-normal-request"
+            id="run-own-tenant-request"
           >
-            Run Normal Request
+            Access Current Tenant
+          </button>
+        </div>
+
+        <div class="card scenario-card">
+          <h3>Access Acme Financial</h3>
+
+          <p>
+            Request Acme Financial workforce data using the
+            currently selected identity.
+          </p>
+
+          <button
+            class="secondary-button"
+            id="run-acme-request"
+          >
+            Access Acme Financial
+          </button>
+        </div>
+
+        <div class="card scenario-card">
+          <h3>Access Northstar Health</h3>
+
+          <p>
+            Request Northstar Health workforce data using
+            the currently selected identity.
+          </p>
+
+          <button
+            class="secondary-button"
+            id="run-northstar-request"
+          >
+            Access Northstar Health
           </button>
         </div>
 
@@ -172,7 +320,7 @@
 
           <p>
             Use the Acme integration to request Northstar
-            Health workforce data.
+            Health workforce data and trigger a denial.
           </p>
 
           <button
@@ -217,6 +365,55 @@
     </section>
 
     <section
+      id="identity-section"
+      class="page-section hidden"
+    >
+      <div class="section-heading">
+        <div>
+          <h2>Identity Activity</h2>
+
+          <p>
+            Review recent Microsoft Entra sign-ins retrieved
+            through Microsoft Graph.
+          </p>
+        </div>
+
+        <button
+          class="secondary-button"
+          id="refresh-identity"
+        >
+          Refresh
+        </button>
+      </div>
+
+      <div class="identity-summary-grid">
+        <div class="card summary-card">
+          <span>Total Sign-ins</span>
+          <strong id="identity-total">—</strong>
+        </div>
+
+        <div class="card summary-card">
+          <span>Successful</span>
+          <strong id="identity-successful">—</strong>
+        </div>
+
+        <div class="card summary-card danger-summary">
+          <span>Failed</span>
+          <strong id="identity-failed">—</strong>
+        </div>
+      </div>
+
+      <div
+        id="identity-container"
+        class="identity-container"
+      >
+        <div class="card">
+          Select Identity Activity to load Entra sign-ins.
+        </div>
+      </div>
+    </section>
+
+    <section
       id="audit-section"
       class="page-section hidden"
     >
@@ -244,5 +441,6 @@
   </main>
 
   <script src="/app.js"></script>
+  <script type="module" src="/auth.js"></script>
 </body>
 </html>

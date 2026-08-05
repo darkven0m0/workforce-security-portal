@@ -1,4 +1,7 @@
-import express, { type Response } from "express";
+import express, {
+  type NextFunction,
+  type Response
+} from "express";
 
 import {
   authenticateWorkforceRequest,
@@ -11,68 +14,140 @@ import {
   securityEvents
 } from "./data.js";
 
-export const securityRouter = express.Router();
+import {
+  identityRouter
+} from "./identity-router.js";
 
-securityRouter.use(authenticateWorkforceRequest);
+export const securityRouter =
+  express.Router();
+
+function requireSecurityRole(
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): void {
+  const role =
+    req.user?.role;
+
+  if (
+    role !== "analyst" &&
+    role !== "admin"
+  ) {
+    res.status(403).json({
+      kind: "ErrorResponse",
+      errorCode:
+        "SECURITY_ROLE_REQUIRED",
+      message:
+        "Security Analyst or Admin access is required."
+    });
+
+    return;
+  }
+
+  next();
+}
+
+function requireAdminRole(
+  req: AuthenticatedRequest,
+  res: Response,
+  next: NextFunction
+): void {
+  if (
+    req.user?.role !==
+    "admin"
+  ) {
+    res.status(403).json({
+      kind: "ErrorResponse",
+      errorCode:
+        "ADMIN_ROLE_REQUIRED",
+      message:
+        "Security Admin access is required for this containment action."
+    });
+
+    return;
+  }
+
+  next();
+}
+
+securityRouter.use(
+  authenticateWorkforceRequest
+);
+
+securityRouter.use(
+  requireSecurityRole
+);
+
+securityRouter.use(
+  "/identity",
+  identityRouter
+);
 
 securityRouter.get(
   "/events",
-  (req: AuthenticatedRequest, res: Response) => {
-    if (req.user?.role !== "analyst") {
-      res.status(403).json({
-        kind: "ErrorResponse",
-        errorCode: "ANALYST_ROLE_REQUIRED",
-        message: "Security analyst access is required."
-      });
-      return;
-    }
-
+  (
+    _req: AuthenticatedRequest,
+    res: Response
+  ) => {
     res.json({
-      kind: "SecurityEventCollection",
+      kind:
+        "SecurityEventCollection",
       securityEvents,
-      totalItems: securityEvents.length
+      totalItems:
+        securityEvents.length
     });
   }
 );
 
 securityRouter.patch(
   "/events/:eventId/investigate",
-  (req: AuthenticatedRequest, res: Response) => {
-    if (req.user?.role !== "analyst") {
-      res.status(403).json({
-        kind: "ErrorResponse",
-        errorCode: "ANALYST_ROLE_REQUIRED",
-        message: "Security analyst access is required."
-      });
-      return;
-    }
-
-    const event = securityEvents.find(
-      item => item.id === req.params.eventId
-    );
+  (
+    req: AuthenticatedRequest,
+    res: Response
+  ) => {
+    const event =
+      securityEvents.find(
+        item =>
+          item.id ===
+          req.params.eventId
+      );
 
     if (!event) {
       res.status(404).json({
         kind: "ErrorResponse",
-        errorCode: "SECURITY_EVENT_NOT_FOUND",
-        message: "The requested security event does not exist."
+        errorCode:
+          "SECURITY_EVENT_NOT_FOUND",
+        message:
+          "The requested security event does not exist."
       });
+
       return;
     }
 
-    event.status = "Investigating";
+    event.status =
+      "Investigating";
 
     auditEntries.push({
-      id: `audit-${auditEntries.length + 1}`,
-      organizationId: event.organizationId,
-      actor: req.user.subject,
-      action: "SECURITY_EVENT_INVESTIGATION_STARTED",
-      target: event.id,
-      createdAt: new Date().toISOString()
+      id:
+        `audit-${
+          auditEntries.length + 1
+        }`,
+      organizationId:
+        event.organizationId,
+      actor:
+        req.user?.subject ??
+        "unknown",
+      action:
+        "SECURITY_EVENT_INVESTIGATION_STARTED",
+      target:
+        event.id,
+      createdAt:
+        new Date().toISOString()
     });
 
     res.json({
-      kind: "SecurityEventResponse",
+      kind:
+        "SecurityEventResponse",
       event
     });
   }
@@ -80,83 +155,106 @@ securityRouter.patch(
 
 securityRouter.patch(
   "/events/:eventId/revoke-api-key",
-  (req: AuthenticatedRequest, res: Response) => {
-    if (req.user?.role !== "analyst") {
-      res.status(403).json({
-        kind: "ErrorResponse",
-        errorCode: "ANALYST_ROLE_REQUIRED",
-        message: "Security analyst access is required."
-      });
-      return;
-    }
-
-    const event = securityEvents.find(
-      item => item.id === req.params.eventId
-    );
+  requireAdminRole,
+  (
+    req: AuthenticatedRequest,
+    res: Response
+  ) => {
+    const event =
+      securityEvents.find(
+        item =>
+          item.id ===
+          req.params.eventId
+      );
 
     if (!event) {
       res.status(404).json({
         kind: "ErrorResponse",
-        errorCode: "SECURITY_EVENT_NOT_FOUND",
-        message: "The requested security event does not exist."
+        errorCode:
+          "SECURITY_EVENT_NOT_FOUND",
+        message:
+          "The requested security event does not exist."
       });
+
       return;
     }
 
-    const matchingKey = Object.entries(demoApiClients).find(
-      ([, client]) =>
-        client.integrationId === event.integrationId
-    );
+    const matchingKey =
+      Object.entries(
+        demoApiClients
+      ).find(
+        ([, client]) =>
+          client.integrationId ===
+          event.integrationId
+      );
 
     if (!matchingKey) {
       res.status(404).json({
         kind: "ErrorResponse",
-        errorCode: "API_CLIENT_NOT_FOUND",
-        message: "No API client matches the affected integration."
+        errorCode:
+          "API_CLIENT_NOT_FOUND",
+        message:
+          "No API client matches the affected integration."
       });
+
       return;
     }
 
-    const [apiKey, apiClient] = matchingKey;
+    const [
+      apiKey,
+      apiClient
+    ] = matchingKey;
 
-    apiClient.status = "revoked";
-    event.status = "Contained";
+    apiClient.status =
+      "revoked";
+
+    event.status =
+      "Contained";
 
     auditEntries.push({
-      id: `audit-${auditEntries.length + 1}`,
-      organizationId: event.organizationId,
-      actor: req.user.subject,
-      action: "API_KEY_REVOKED",
-      target: apiClient.integrationId,
-      createdAt: new Date().toISOString()
+      id:
+        `audit-${
+          auditEntries.length + 1
+        }`,
+      organizationId:
+        event.organizationId,
+      actor:
+        req.user?.subject ??
+        "unknown",
+      action:
+        "API_KEY_REVOKED",
+      target:
+        apiClient.integrationId,
+      createdAt:
+        new Date().toISOString()
     });
 
     res.json({
-      kind: "ContainmentResponse",
+      kind:
+        "ContainmentResponse",
       event,
-      integrationId: apiClient.integrationId,
-      apiKeySuffix: apiKey.slice(-4),
-      status: "revoked"
+      integrationId:
+        apiClient.integrationId,
+      apiKeySuffix:
+        apiKey.slice(-4),
+      status:
+        "revoked"
     });
   }
 );
 
 securityRouter.get(
   "/audit",
-  (req: AuthenticatedRequest, res: Response) => {
-    if (req.user?.role !== "analyst") {
-      res.status(403).json({
-        kind: "ErrorResponse",
-        errorCode: "ANALYST_ROLE_REQUIRED",
-        message: "Security analyst access is required."
-      });
-      return;
-    }
-
+  (
+    _req: AuthenticatedRequest,
+    res: Response
+  ) => {
     res.json({
-      kind: "AuditEntryCollection",
+      kind:
+        "AuditEntryCollection",
       auditEntries,
-      totalItems: auditEntries.length
+      totalItems:
+        auditEntries.length
     });
   }
 );

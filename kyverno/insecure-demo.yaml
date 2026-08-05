@@ -1,0 +1,20 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: insecure-workforce-demo
+  namespace: dev
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: insecure-workforce-demo
+  template:
+    metadata:
+      labels:
+        app: insecure-workforce-demo
+    spec:
+      containers:
+        - name: insecure-container
+          image: nginx:latest
+          securityContext:
+            privileged: true

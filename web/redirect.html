@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  >
+
+  <title>Completing Microsoft Sign-In</title>
+</head>
+
+<body>
+  <p>Completing Microsoft authentication...</p>
+
+  <script type="module">
+    import {
+      broadcastResponseToMainFrame
+    } from "/vendor/msal-redirect-bridge.js";
+
+    broadcastResponseToMainFrame().catch(
+      error => {
+        console.error(
+          "Unable to return the Microsoft authentication response.",
+          error
+        );
+
+        document.body.textContent =
+          "Microsoft authentication could not be completed.";
+      }
+    );
+  </script>
+</body>
+</html>
